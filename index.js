@@ -4,6 +4,7 @@ let config = {
     url: 'https://s17-ru.bitefight.gameforge.com/user/login',
     width: 1920,
     height: 1080,
+    username: 'Allarion'
 }
 
 start = async (config) => {
@@ -15,6 +16,7 @@ start = async (config) => {
     });
     const page = await browser.newPage();
     await page.goto(config.url);
+    await page.$eval('input[name=user]', (el, username) => el.value = username, config.username);
 };
 
 start(config);
