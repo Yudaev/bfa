@@ -14,8 +14,10 @@ auth = async (page, config) => {
 getUserInfo = async (page, config) => {
     let data = {};
     let currentUrl = await page.url().split('?')[0];
+    let urls = [config.url.main + config.url.hunt,
+                config.url.main + config.url.profile]
 
-    if (currentUrl !== (config.url.main + config.url.profile)) await page.goto(config.url.main);
+    if (!urls.includes(currentUrl)) await page.goto(config.url.main);
     await page.waitForSelector('.gold');
 
     let userInfo = await page.$eval('.gold',el =>
@@ -34,6 +36,23 @@ getUserInfo = async (page, config) => {
     return data;
 }
 
+hunting = async (page, config) => {
+    let userData;
+
+    do {
+        let currentUrl = await page.url().split('?')[0];
+        if (currentUrl !== config.url.main + config.url.hunt) await page.goto(config.url.main + config.url.hunt);
+        userData = await getUserInfo(page, config);
+        let enemyPower = Math.round(userData.power - userData.power * 0.02);
+
+        await page.$eval('[name="lvlbis"]', (el, enemyPower) => el.value = enemyPower, enemyPower);
+        await page.click('[name="levelsearch"]');
+        await page.waitForSelector('.cost');
+        await page.click('.cost');
+        await page.waitForSelector('#fighter_details')
+    } while (userData.hp > config.userHPmin);
+}
+
 start = async (config) => {
     const browser = await puppeteer.launch({
         headless: false,
@@ -45,9 +64,7 @@ start = async (config) => {
     await page.goto(config.url.main);
     if (await page.$('.cookiebanner1') !== null) await page.click('[class="cookiebanner5"]');
     if (await page.$('#regBtn') !== null) await auth(page, config);
-    let userData = await getUserInfo(page, config);
-
-    console.log(userData);
+    await hunting(page, config);
 };
 
 start(config);
