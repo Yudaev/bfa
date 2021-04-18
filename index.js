@@ -52,7 +52,7 @@ getUserInfo = async (page, config) => {
 hunting = async (page, config, userData) => {
     let currentUrl = await page.url().split('?')[0];
     if (currentUrl !== config.url.main + config.url.hunt) await page.goto(config.url.main + config.url.hunt);
-    let enemyPower = Math.round(userData.power - userData.power * 0.02);
+    let enemyPower = Math.round(userData.power - userData.power * 0.03);
 
     await page.$eval('[name="lvlbis"]', (el, enemyPower) => el.value = enemyPower, enemyPower);
     await page.click('[name="levelsearch"]');
@@ -61,7 +61,7 @@ hunting = async (page, config, userData) => {
 
     await page.waitForSelector('#fighter_details')
     let enemyName = await page.$eval('#fighter_details_defender h3 a',el => el.textContent);
-    let enemyGold = await page.$eval('p.gold',el => {
+    let enemyGold = await page.$('p.gold') !== null ? await page.$eval('p.gold',el => {
             let allNumbers = el
                 .textContent
                 .trim()
@@ -71,7 +71,7 @@ hunting = async (page, config, userData) => {
                 .match(/\d+/g);
             return +allNumbers[0] + +allNumbers[1];
         }
-    );
+    ) : 0;
     let winner = await page.$eval('.wrap-content > h3', el => el.textContent);
     console.log(`[${logTime()}] ${winner}. Attacked ${enemyName}. My HP at start: ${userData.hp}. Gold: ${enemyGold}`);
 
