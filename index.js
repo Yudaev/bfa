@@ -83,8 +83,8 @@ logTime = () => {
     let datetime = currentdate.getDate() + '.'
         + (currentdate.getMonth() + 1)  + '.'
         + currentdate.getFullYear() + ' '
-        + currentdate.getHours() + ':'
-        + currentdate.getMinutes() + ':'
+        + (currentdate.getHours() < 10 ? '0' + currentdate.getHours() : currentdate.getHours()) + ':'
+        + (currentdate.getMinutes() < 10 ? '0' + currentdate.getMinutes() : currentdate.getMinutes()) + ':'
         + (currentdate.getSeconds() < 10 ? '0' + currentdate.getSeconds() : currentdate.getSeconds());
     return datetime;
 }
@@ -102,19 +102,25 @@ start = async (config) => {
     await page.goto(config.url.main);
     if (await page.$('.cookiebanner1') !== null) await page.click('[class="cookiebanner5"]');
     if (await page.$('#regBtn') !== null) await auth(browser, page, config);
-
-    console.log(`[${logTime()}] I start hunting`);
     let userData = await getUserInfo(page, config);
-    while (userData.hp > config.userHPmin) userData = await hunting(page, config, userData);
-    console.log('[' + logTime() + ']', 'User data after the hunt', await getUserInfo(page, config));
 
-    // if (await page.url().split('?')[0] !== (config.url.main + config.url.profile))
-    //     await page.goto(config.url.main + config.url.profile);
-    // healingCount = await page.$('span#healing_countdown') !== null ?
-    //     await page.$eval('span#healing_countdown',el => el.textContent) : null;
-    // console.log(healingCount)
+    do {
+        console.log(`[${logTime()}] I start hunting`);
+        while (userData.hp > config.userHPmin) userData = await hunting(page, config, userData);
+        console.log('[' + logTime() + ']', 'User data after the hunt', await getUserInfo(page, config));
 
-    //console.log(await page.$('span#healing_countdown'))
+        if (await page.url().split('?')[0] !== (config.url.main + config.url.profile))
+            await page.goto(config.url.main + config.url.profile);
+        healingCount = await page.$('span#healing_countdown') !== null ?
+            await page.$eval('span#healing_countdown', el => el.textContent) : null;
+        console.log('[' + logTime() + ']', 'Waiting for healing', healingCount);
+        let splitTime = healingCount.split(':');
+        let seconds = (+splitTime[0]) * 60 * 60 + (+splitTime[1]) * 60 + (+splitTime[2]);
+        await sleep(seconds * 1000);
+        userData = await getUserInfo(page, config);
+        // console.log(await page.$('span#healing_countdown'))
+    } while (userData.hp > config.userHPmin);
+
     await browser.close();
 };
 
