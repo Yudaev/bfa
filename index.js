@@ -20,6 +20,7 @@ auth = async (browser, page, config) => {
 }
 
 getUserInfo = async (page, config) => {
+    await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
     let data = {};
     let currentUrl = await page.url().split('?')[0];
     let urls = [config.url.main + config.url.hunt,
@@ -59,7 +60,8 @@ hunting = async (page, config, userData) => {
     await page.waitForSelector('.cost');
     await page.click('.cost');
 
-    await page.waitForSelector('#fighter_details')
+    await page.waitForSelector('#fighter_details');
+    await page.waitForSelector('#fighter_details_defender h3 a');
     let enemyName = await page.$eval('#fighter_details_defender h3 a',el => el.textContent);
     let enemyGold = await page.$('p.gold') !== null ? await page.$eval('p.gold',el => {
             let allNumbers = el
@@ -91,6 +93,17 @@ logTime = () => {
 
 sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+getSleepTime = async page => {
+    if (await page.url().split('?')[0] !== (config.url.main + config.url.profile))
+        await page.goto(config.url.main + config.url.profile);
+    healingCount = await page.$('span#healing_countdown') !== null ?
+        await page.$eval('span#healing_countdown', el => el.textContent) : null;
+    console.log('[' + logTime() + ']', 'Waiting for healing', healingCount);
+    let splitTime = healingCount.split(':');
+
+    return (+splitTime[0]) * 60 * 60 + (+splitTime[1]) * 60 + (+splitTime[2]);
+}
+
 start = async (config) => {
     const browser = await puppeteer.launch({
         headless: true,
@@ -106,22 +119,26 @@ start = async (config) => {
 
     do {
         console.log(`[${logTime()}] I start hunting`);
-        while (userData.hp > config.userHPmin) userData = await hunting(page, config, userData);
+        try {
+            while (userData.hp > config.userHPmin) userData = await hunting(page, config, userData);
+        } catch (e) {
+            await page.screenshot({path: 'hunting_fail.png'})
+            console.log(e);
+        }
         console.log('[' + logTime() + ']', 'User data after the hunt', await getUserInfo(page, config));
-
-        if (await page.url().split('?')[0] !== (config.url.main + config.url.profile))
-            await page.goto(config.url.main + config.url.profile);
-        healingCount = await page.$('span#healing_countdown') !== null ?
-            await page.$eval('span#healing_countdown', el => el.textContent) : null;
-        console.log('[' + logTime() + ']', 'Waiting for healing', healingCount);
-        let splitTime = healingCount.split(':');
-        let seconds = (+splitTime[0]) * 60 * 60 + (+splitTime[1]) * 60 + (+splitTime[2]);
-        await sleep(seconds * 1000);
         userData = await getUserInfo(page, config);
-        // console.log(await page.$('span#healing_countdown'))
+
     } while (userData.hp > config.userHPmin);
 
+    let seconds = await getSleepTime(page);
     await browser.close();
+    return seconds;
+
 };
+
+// do {
+//     let sleepTime = await start(config);
+//     sleep(sleepTime * 1000);
+// } while (config.cycleStart)
 
 start(config);
