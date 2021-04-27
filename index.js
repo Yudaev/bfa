@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const CronJob = require('cron').CronJob;
 const fs = require("fs");
 
 let config = JSON.parse(fs.readFileSync('config.json')),
@@ -104,7 +105,7 @@ getSleepTime = async page => {
     return (+splitTime[0]) * 60 * 60 + (+splitTime[1]) * 60 + (+splitTime[2]);
 }
 
-start = async (config) => {
+botStart = async (config) => {
     const browser = await puppeteer.launch({
         headless: true,
         ignoreHTTPSErrors: true,
@@ -136,9 +137,8 @@ start = async (config) => {
 
 };
 
-// do {
-//     let sleepTime = await start(config);
-//     sleep(sleepTime * 1000);
-// } while (config.cycleStart)
+let job = new CronJob('* */3 * * *', function() {
+    botStart(config);
+}, null, true, 'Europe/Moscow');
+job.start();
 
-start(config);
