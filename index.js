@@ -137,7 +137,7 @@ botStart = async (config) => {
 
 };
 
-let job = new CronJob('* */3 * * *', function() {
+let job = new CronJob('0 */3 * * *', function() {
     botStart(config);
 }, null, true, 'Europe/Moscow');
 job.start();
