@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Yudaev/bfa#readme",
   "dependencies": {
     "cron": "^1.8.2",
+    "optimist": "^0.6.1",
     "puppeteer": "^8.0.0"
   }
 }

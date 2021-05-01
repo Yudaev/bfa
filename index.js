@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const CronJob = require('cron').CronJob;
+const param = require('optimist').argv;
 const fs = require("fs");
 
 let config = JSON.parse(fs.readFileSync('config.json')),
@@ -54,7 +55,7 @@ getUserInfo = async (page, config) => {
 hunting = async (page, config, userData) => {
     let currentUrl = await page.url().split('?')[0];
     if (currentUrl !== config.url.main + config.url.hunt) await page.goto(config.url.main + config.url.hunt);
-    let enemyPower = Math.round(userData.power - userData.power * 0.03);
+    let enemyPower = Math.round(userData.power - userData.power * 0.04);
 
     await page.$eval('[name="lvlbis"]', (el, enemyPower) => el.value = enemyPower, enemyPower);
     await page.click('[name="levelsearch"]');
@@ -137,8 +138,14 @@ botStart = async (config) => {
 
 };
 
-let job = new CronJob('0 */3 * * *', function() {
-    botStart(config);
-}, null, true, 'Europe/Moscow');
-job.start();
-
+switch(param.start) {
+    case 'alone':  // if (x === 'value1')
+        botStart(config);
+        break;
+    default:
+        let job = new CronJob('0 */3 * * *', function() {
+            botStart(config);
+        }, null, true, 'Europe/Moscow');
+        job.start();
+        break;
+}
