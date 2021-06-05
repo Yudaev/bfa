@@ -84,13 +84,12 @@ hunting = async (page, config, userData) => {
 
 logTime = () => {
     let currentdate = new Date();
-    let datetime = currentdate.getDate() + '.'
+    return currentdate.getDate() + '.'
         + (currentdate.getMonth() + 1)  + '.'
         + currentdate.getFullYear() + ' '
         + (currentdate.getHours() < 10 ? '0' + currentdate.getHours() : currentdate.getHours()) + ':'
         + (currentdate.getMinutes() < 10 ? '0' + currentdate.getMinutes() : currentdate.getMinutes()) + ':'
         + (currentdate.getSeconds() < 10 ? '0' + currentdate.getSeconds() : currentdate.getSeconds());
-    return datetime;
 }
 
 sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -106,7 +105,7 @@ getSleepTime = async page => {
     return (+splitTime[0]) * 60 * 60 + (+splitTime[1]) * 60 + (+splitTime[2]);
 }
 
-botStart = async (config) => {
+botStart = async (config, upgrade = false) => {
     const browser = await puppeteer.launch({
         headless: true,
         ignoreHTTPSErrors: true,
@@ -115,7 +114,11 @@ botStart = async (config) => {
     });
     const page = await browser.newPage();
     await page.goto(config.url.main);
-    if (await page.$('.cookiebanner1') !== null) await page.click('[class="cookiebanner5"]');
+    try {
+        if (await page.$('.cookiebanner1') !== null) await page.click('[class="cookiebanner5"]');
+    }catch(e){
+        console.error('[' + logTime() + ']', e);
+    }
     if (await page.$('#regBtn') !== null) await auth(browser, page, config);
     let userData = await getUserInfo(page, config);
 
@@ -143,7 +146,7 @@ switch(param.start) {
         botStart(config);
         break;
     default:
-        let job = new CronJob('0 */3 * * *', function() {
+        let job = new CronJob('0 */3 * * *', function() { //0 */3 * * *
             botStart(config);
         }, null, true, 'Europe/Moscow');
         job.start();
