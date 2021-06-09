@@ -1,0 +1,14 @@
+{
+  "url": {
+    "main": "https://s17-ru.bitefight.gameforge.com/",
+    "auth": "user/login",
+    "profile": "profile",
+    "hunt": "robbery/index"
+  },
+  "width": 1920,
+  "height": 1080,
+  "username": "username",
+  "password": "password",
+  "userHPmin": 10000,
+  "cycleStart": true
+}
