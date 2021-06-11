@@ -110,7 +110,7 @@ getSleepTime = async page => {
 botStart = async (config, lag = false) => {
     if(lag) {
         let sleepValue = getRandomInt(45 * 60);
-        console.log(`[${logTime()}] Started lag in ${sleepValue % 60} minutes and ${sleepValue - sleepValue % 60} seconds`);
+        console.log(`[${logTime()}] Started lag in ${(sleepValue - sleepValue % 60)/60} minutes and ${sleepValue % 60} seconds`);
         await sleep(sleepValue * 1000);
     }
     const browser = await puppeteer.launch({
