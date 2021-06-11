@@ -94,6 +94,8 @@ logTime = () => {
 
 sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+getRandomInt = max => Math.floor(Math.random() * max);
+
 getSleepTime = async page => {
     if (await page.url().split('?')[0] !== (config.url.main + config.url.profile))
         await page.goto(config.url.main + config.url.profile);
@@ -105,7 +107,12 @@ getSleepTime = async page => {
     return (+splitTime[0]) * 60 * 60 + (+splitTime[1]) * 60 + (+splitTime[2]);
 }
 
-botStart = async (config, upgrade = false) => {
+botStart = async (config, lag = false) => {
+    if(lag) {
+        let sleepValue = getRandomInt(45 * 60);
+        console.log(`[${logTime()}] Started lag in ${sleepValue % 60} minutes and ${sleepValue - sleepValue % 60} seconds`);
+        await sleep(sleepValue * 1000);
+    }
     const browser = await puppeteer.launch({
         headless: true,
         ignoreHTTPSErrors: true,
@@ -147,7 +154,11 @@ switch(param.start) {
         break;
     default:
         let job = new CronJob('0 */3 * * *', function() { //0 */3 * * *
-            botStart(config);
+            if(new Date().getHours() === 0 || new Date().getHours() >= 8) {
+                botStart(config, true);
+            } else {
+                console.log('[' + logTime() + ']', 'Sleeping time');
+            }
         }, null, true, 'Europe/Moscow');
         job.start();
         break;
