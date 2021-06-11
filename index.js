@@ -117,7 +117,7 @@ botStart = async (config, lag = false) => {
         headless: true,
         ignoreHTTPSErrors: true,
         defaultViewport: null,
-        args: [`--window-size=${config.width},${config.height}`]
+        args: [`--no-sandbox`,`--window-size=${config.width},${config.height}`]
     });
     const page = await browser.newPage();
     await page.goto(config.url.main);
