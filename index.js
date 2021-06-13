@@ -4,7 +4,8 @@ const param = require('optimist').argv;
 const fs = require("fs");
 
 let config = JSON.parse(fs.readFileSync('config.json')),
-    healingCount = null;
+    healingCount = null,
+    ratio = 19;
 
 auth = async (browser, page, config) => {
     if (await page.url().split('?')[0] !== (config.url.main + config.url.auth))
@@ -55,10 +56,17 @@ getUserInfo = async (page, config) => {
 hunting = async (page, config, userData) => {
     let currentUrl = await page.url().split('?')[0];
     if (currentUrl !== config.url.main + config.url.hunt) await page.goto(config.url.main + config.url.hunt);
-    let enemyPower = Math.round(userData.power - userData.power * 0.04);
+    let enemyPower = Math.round(userData.power - userData.power * (ratio/100));
 
     await page.$eval('[name="lvlbis"]', (el, enemyPower) => el.value = enemyPower, enemyPower);
     await page.click('[name="levelsearch"]');
+
+    await page.waitForSelector('.gold');
+    if((await page.$x(`//div[@class="tdi"]/strong`)).length !== 0){
+        ratio -= 1;
+        console.log(`[${logTime()}] Ratio changed on ${ratio/100}`)
+        return await getUserInfo(page, config);
+    }
     await page.waitForSelector('.cost');
     await page.click('.cost');
 
@@ -114,7 +122,7 @@ botStart = async (config, lag = false) => {
         await sleep(sleepValue * 1000);
     }
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         ignoreHTTPSErrors: true,
         defaultViewport: null,
         args: [`--no-sandbox`,`--window-size=${config.width},${config.height}`]
@@ -132,7 +140,7 @@ botStart = async (config, lag = false) => {
     do {
         console.log(`[${logTime()}] I start hunting`);
         try {
-            while (userData.hp > config.userHPmin) userData = await hunting(page, config, userData);
+            while (userData.hp > config.userHPmin && userData.energy !== 0) userData = await hunting(page, config, userData);
         } catch (e) {
             await page.screenshot({path: 'hunting_fail.png'})
             console.log(e);
@@ -140,12 +148,12 @@ botStart = async (config, lag = false) => {
         console.log('[' + logTime() + ']', 'User data after the hunt', await getUserInfo(page, config));
         userData = await getUserInfo(page, config);
 
-    } while (userData.hp > config.userHPmin);
+    } while (userData.hp > config.userHPmin && userData.energy !== 0 && ratio !== 0);
 
     let seconds = await getSleepTime(page);
     await browser.close();
+    ratio = 19;
     return seconds;
-
 };
 
 switch(param.start) {
