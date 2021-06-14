@@ -122,7 +122,7 @@ botStart = async (config, lag = false) => {
         await sleep(sleepValue * 1000);
     }
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         ignoreHTTPSErrors: true,
         defaultViewport: null,
         args: [`--no-sandbox`,`--window-size=${config.width},${config.height}`]
