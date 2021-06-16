@@ -158,8 +158,6 @@ botStart = async (config, lag = false) => {
     if (await page.$('#regBtn') !== null) await auth(browser, page, config);
     let userData = await getUserInfo(page, config);
 
-    //await churchActivate(page, config);
-
     do {
         console.log(`[${logTime()}] I start hunting`);
         try {
