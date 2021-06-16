@@ -115,6 +115,27 @@ getSleepTime = async page => {
     return (+splitTime[0]) * 60 * 60 + (+splitTime[1]) * 60 + (+splitTime[2]);
 }
 
+churchActivate = async (page, config) => {
+    await page.goto(config.url.main + config.url.city);
+    await page.waitForSelector('.table-wrap');
+    await page.goto(config.url.main + config.url.church);
+    await page.waitForSelector('.table-wrap');
+
+    console.log(`[${logTime()}] Church opened`)
+
+    let OD = await page.$eval('.table-wrap p',el =>
+        el
+            .textContent
+            .replace(/(\s\r\n|\n|\r|\s)/gm, "")
+            .match(/\d+/g)[1]);
+    console.log(`[${logTime()}] Needed ${OD} for activate church`)
+    if (OD <= config.churchODActivate) {
+        await page.click('input[name="heal"]');
+        await page.waitForSelector('.gold');
+        console.log(`[${logTime()}] Church is activated`)
+    }
+}
+
 botStart = async (config, lag = false) => {
     if(lag) {
         let sleepValue = getRandomInt(45 * 60);
@@ -137,6 +158,8 @@ botStart = async (config, lag = false) => {
     if (await page.$('#regBtn') !== null) await auth(browser, page, config);
     let userData = await getUserInfo(page, config);
 
+    //await churchActivate(page, config);
+
     do {
         console.log(`[${logTime()}] I start hunting`);
         try {
@@ -146,6 +169,8 @@ botStart = async (config, lag = false) => {
             console.log(e);
         }
         console.log('[' + logTime() + ']', 'User data after the hunt', await getUserInfo(page, config));
+
+        if (userData.hp < config.userHPmin && userData.energy >= 40 && ratio !== 0) await churchActivate(page, config);
         userData = await getUserInfo(page, config);
 
     } while (userData.hp > config.userHPmin && userData.energy !== 0 && ratio !== 0);
