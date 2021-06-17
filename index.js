@@ -119,8 +119,8 @@ churchActivate = async (page, config) => {
     await page.goto(config.url.main + config.url.city);
     await page.waitForSelector('.table-wrap');
     await page.goto(config.url.main + config.url.church);
-    await page.waitForSelector('.table-wrap');
-
+    await page.waitForSelector('.table-wrap p');
+    await page.waitForSelector('.gold');
     console.log(`[${logTime()}] Church opened`)
 
     let OD = await page.$eval('.table-wrap p',el =>
