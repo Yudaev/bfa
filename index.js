@@ -58,7 +58,8 @@ hunting = async (page, config, userData) => {
     if (currentUrl !== config.url.main + config.url.hunt) await page.goto(config.url.main + config.url.hunt);
     let enemyPower = Math.round(userData.power - userData.power * (ratio/100));
 
-    await page.$eval('[name="lvlbis"]', (el, enemyPower) => el.value = enemyPower, enemyPower);
+    if (await page.$('[name="lvlbis"]') !== null) await page.$eval('[name="lvlbis"]', (el, enemyPower) => el.value = enemyPower, enemyPower);
+    else return await getUserInfo(page, config);
     await page.click('[name="levelsearch"]');
 
     await page.waitForSelector('.gold');
