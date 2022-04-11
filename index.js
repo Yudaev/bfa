@@ -35,6 +35,7 @@ getUserInfo = async (page, config) => {
     }catch (e){
         console.log(e);
         await page.screenshot({ path: 'example.png' });
+        await page.goto(config.url.main);
     }
 
     let userInfo = await page.$eval('.gold',el =>
@@ -53,6 +54,36 @@ getUserInfo = async (page, config) => {
     return data;
 }
 
+getUserStats = async (page, config) => {
+    await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
+    let data = {};
+    let currentUrl = await page.url().split('?')[0];
+    let urls = [config.url.main + config.url.profile]
+
+    if (!urls.includes(currentUrl)) await page.goto(config.url.main + config.url.profile);
+    try {
+        await page.waitForSelector('#skills_tab .table-wrap > table > tbody > tr');
+    }catch (e){
+        console.log(e);
+        await page.screenshot({ path: 'example.png' });
+    }
+
+    let userInfo = await page.$$eval('#skills_tab .table-wrap > table > tbody > tr',(userInfo) =>
+        userInfo.map((option) => option.innerHTML)
+            // .textContent
+            // .trim()
+            // .split('\n')
+            // .map(el => el.trim())
+    );
+    // data.gold = userInfo[0].replace('.','');
+    // data.energy = userInfo[3].match(/^\d+/)[0];
+    // data.hp = userInfo[4].replace('.','').trim().match(/^\d+/)[0];
+    // data.power = userInfo[5].split(' ').map(el => el.trim());
+    // data.power = data.power[data.power.length - 1];
+
+    return userInfo;
+}
+
 hunting = async (page, config, userData) => {
     let currentUrl = await page.url().split('?')[0];
     if (currentUrl !== config.url.main + config.url.hunt) await page.goto(config.url.main + config.url.hunt);
@@ -68,9 +99,9 @@ hunting = async (page, config, userData) => {
         console.log(`[${logTime()}] Ratio changed on ${ratio/100}`)
         return await getUserInfo(page, config);
     }
+
     await page.waitForSelector('.cost');
     await page.click('.cost');
-
     await page.waitForSelector('#fighter_details');
     await page.waitForSelector('#fighter_details_defender h3 a');
     let enemyName = await page.$eval('#fighter_details_defender h3 a',el => el.textContent);
@@ -144,7 +175,7 @@ botStart = async (config, lag = false) => {
         await sleep(sleepValue * 1000);
     }
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         ignoreHTTPSErrors: true,
         defaultViewport: null,
         args: [`--no-sandbox`,`--window-size=${config.width},${config.height}`]
@@ -158,21 +189,23 @@ botStart = async (config, lag = false) => {
     }
     if (await page.$('#regBtn') !== null) await auth(browser, page, config);
     let userData = await getUserInfo(page, config);
+    //let stats = await getUserStats(page, config);
+    //console.log(stats[1]);
 
     do {
         console.log(`[${logTime()}] I start hunting`);
         try {
-            while (userData.hp > config.userHPmin && userData.energy !== 0) userData = await hunting(page, config, userData);
+            while (userData.hp > config.userHPmin && userData.energy > 0) userData = await hunting(page, config, userData);
         } catch (e) {
             await page.screenshot({path: 'hunting_fail.png'})
             console.log(e);
         }
         console.log('[' + logTime() + ']', 'User data after the hunt', await getUserInfo(page, config));
 
-        if (userData.hp < config.userHPmin && userData.energy >= 40 && ratio !== 0) await churchActivate(page, config);
+        if (userData.hp < config.userHPmin && userData.energy >= 40 && ratio > 0) await churchActivate(page, config);
         userData = await getUserInfo(page, config);
 
-    } while (userData.hp > config.userHPmin && userData.energy !== 0 && ratio !== 0);
+    } while (userData.hp > config.userHPmin && userData.energy !== 0 && ratio > 0);
 
     let seconds = await getSleepTime(page);
     await browser.close();
